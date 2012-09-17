@@ -57,9 +57,17 @@ class UIView
     when_pressed(enableInteraction, &proc)
   end
 
+  def prevent_gestures_for(klass)
+    @prevent_klasses = [] unless @prevent_klasses
+    @prevent_klasses << klass
+  end
 
+  def gestureRecognizer(gestureRecognizer, shouldReceiveTouch:touch)
+    return true if @prevent_klasses.nil? || @prevent_klasses.empty?
+    @prevent_klasses.map { |klass| !touch.view.is_a?(klass) }.include?(true)
+  end
 
-  private
+private
 
   def handle_gesture(recognizer)
     @recognizers[recognizer].call(recognizer)
@@ -68,6 +76,7 @@ class UIView
   # Adds the recognizer and keeps a strong reference to the Proc object.
   def add_gesture_recognizer_helper(recognizer, enableInteraction, proc)
     setUserInteractionEnabled true if enableInteraction && !isUserInteractionEnabled
+    recognizer.delegate = self
     self.addGestureRecognizer(recognizer)
 
     @recognizers = {} unless @recognizers
